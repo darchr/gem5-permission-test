@@ -19,11 +19,13 @@ jobs:
           for commit in $(git rev-list ${{ github.event.before}}..${{ github.sha}}); do
               git checkout $commit
               git log -1 --pretty=format:"%s" >> test.txt
-              echo test.txt
-              echo "test\n\nChange-Id: " >> msg.txt
-              if git interpret-trailers --parse < msg.txt | grep -q "^Change-Id:" ; then
-                echo "passed test"
-                exit 0
+              string="This is a test string."
+              substring="Change-Id: "
+              if git log -1 --pretty=format:"%s" | grep -q "$substring"
+              then
+                echo "Substring found."
+              else
+                echo "Substring not found."
               fi
               echo "outside test"
           done
