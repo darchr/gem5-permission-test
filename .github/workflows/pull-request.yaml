@@ -18,9 +18,10 @@ jobs:
       - run: |
           for commit in $(git rev-list ${{ github.event.before}}..${{ github.sha}}); do
               git checkout $commit
-              git log -1 --pretty=format:"%s" >> msg.txt
-              if git interpret-trailers --parse < msg.txt | grep -q "^Change-Id: $" ; then
-                exit 0
+              if git log -1 --pretty=format:"%s" | grep -q "Change-Id: "
+              then
+                echo "Substring found."
+              else
+                echo "Substring not found."
               fi
-              echo "run test"
           done
