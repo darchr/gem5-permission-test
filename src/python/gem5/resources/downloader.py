@@ -1,4 +1,4 @@
-# Copyright (c) 2021 The Regents of the University of California
+# Copyright (c) 2021-2023 The Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@ from urllib.error import HTTPError
 from typing import List, Dict, Set, Optional
 
 from .md5_utils import md5_file, md5_dir
+from ..utils.progress_bar import tqdm, progress_hook
 
 from ..utils.filelock import FileLock
 
@@ -55,7 +56,7 @@ def _resources_json_version_required() -> str:
     """
     Specifies the version of resources.json to obtain.
     """
-    return "22.1"
+    return "develop"
 
 
 def _get_resources_json_uri() -> str:
@@ -107,7 +108,7 @@ def _get_resources_json_at_path(path: str, use_caching: bool = True) -> Dict:
     # Note the timeout is 120 so the `_download` function is given time to run
     # its Truncated Exponential Backoff algorithm
     # (maximum of roughly 1 minute). Typically this code will run quickly.
-    with FileLock("{}.lock".format(download_path), timeout=120):
+    with FileLock(f"{download_path}.lock", timeout=120):
 
         # The resources.json file can change at any time, but to avoid
         # excessive retrieval we cache a version locally and use it for up to
@@ -154,8 +155,13 @@ def _get_resources_json() -> Dict:
 
     # If the current version pulled is not correct, look up the
     # "previous-versions" field to find the correct one.
+    # If the resource JSON file does not have a "version" field or it's
+    # null/None, then we will use this resource JSON file (this is usefull for
+    # testing purposes).
     version = _resources_json_version_required()
-    if to_return["version"] != version:
+    json_version = None if "version" not in to_return else to_return["version"]
+
+    if json_version and json_version != version:
         if version in to_return["previous-versions"].keys():
             to_return = _get_resources_json_at_path(
                 path=to_return["previous-versions"][version]
@@ -206,9 +212,7 @@ def _get_resources(
             # after a check that the name is unique.
             if resource["name"] in to_return.keys():
                 raise Exception(
-                    "Error: Duplicate resource with name '{}'.".format(
-                        resource["name"]
-                    )
+                    f"Error: Duplicate resource with name '{resource['name']}'."
                 )
             to_return[resource["name"]] = resource
         elif resource["type"] == "group":
@@ -223,9 +227,7 @@ def _get_resources(
                 # the resources.json file. The resources names need to be
                 # unique keyes.
                 raise Exception(
-                    "Error: Duplicate resources with names: {}.".format(
-                        str(intersection)
-                    )
+                    f"Error: Duplicate resources with names: {str(intersection)}."
                 )
             to_return.update(new_map)
 
@@ -281,10 +283,26 @@ def _download(url: str, download_to: str, max_attempts: int = 6) -> None:
                 # get the file as a bytes blob
                 request = urllib.request.Request(url)
                 with urllib.request.urlopen(request, context=ctx) as fr:
-                    with open(download_to, "wb") as fw:
-                        fw.write(fr.read())
+                    with tqdm.wrapattr(
+                        open(download_to, "wb"),
+                        "write",
+                        miniters=1,
+                        desc="Downloading {download_to}",
+                        total=getattr(fr, "length", None),
+                    ) as fw:
+                        for chunk in fr:
+                            fw.write(chunk)
             else:
-                urllib.request.urlretrieve(url, download_to)
+                with tqdm(
+                    unit="B",
+                    unit_scale=True,
+                    unit_divisor=1024,
+                    miniters=1,
+                    desc=f"Downloading {download_to}",
+                ) as t:
+                    urllib.request.urlretrieve(
+                        url, download_to, reporthook=progress_hook(t)
+                    )
             return
         except HTTPError as e:
             # If the error code retrieved is retryable, we retry using a
@@ -323,7 +341,11 @@ def list_resources() -> List[str]:
 
     :returns: A list of resources by name.
     """
-    return _get_resources(valid_types={"resource"}).keys()
+    from .resource import _get_resource_json_type_map
+
+    return _get_resources(
+        valid_types=_get_resource_json_type_map.keys()
+    ).keys()
 
 
 def get_workload_json_obj(workload_name: str) -> Dict:
@@ -356,13 +378,15 @@ def get_resources_json_obj(resource_name: str) -> Dict:
     :raises Exception: An exception is raised if the specified resources does
     not exist.
     """
-    resource_map = _get_resources(valid_types={"resource"})
+    from .resource import _get_resource_json_type_map
+
+    resource_map = _get_resources(
+        valid_types=_get_resource_json_type_map.keys()
+    )
 
     if resource_name not in resource_map:
         raise Exception(
-            "Error: Resource with name '{}' does not exist".format(
-                resource_name
-            )
+            f"Error: Resource with name '{resource_name}' does not exist"
         )
 
     return resource_map[resource_name]
@@ -405,7 +429,7 @@ def get_resource(
     # same resources at once. The timeout here is somewhat arbitarily put at 15
     # minutes.Most resources should be downloaded and decompressed in this
     # timeframe, even on the most constrained of systems.
-    with FileLock("{}.lock".format(to_path), timeout=900):
+    with FileLock(f"{to_path}.lock", timeout=900):
 
         resource_json = get_resources_json_obj(resource_name)
 
@@ -476,13 +500,11 @@ def get_resource(
         url = resource_json["url"].format(url_base=_get_url_base())
 
         _download(url=url, download_to=download_dest)
-        print("Finished downloading resource '{}'.".format(resource_name))
+        print(f"Finished downloading resource '{resource_name}'.")
 
         if run_unzip:
             print(
-                "Decompressing resource '{}' ('{}')...".format(
-                    resource_name, download_dest
-                )
+                f"Decompressing resource '{resource_name}' ('{download_dest}')..."
             )
             unzip_to = download_dest[: -len(zip_extension)]
             with gzip.open(download_dest, "rb") as f:
@@ -490,9 +512,7 @@ def get_resource(
                     shutil.copyfileobj(f, o)
             os.remove(download_dest)
             download_dest = unzip_to
-            print(
-                "Finished decompressing resource '{}'.".format(resource_name)
-            )
+            print(f"Finished decompressing resource '{resource_name}'.")
 
         if run_tar_extract:
             print(
