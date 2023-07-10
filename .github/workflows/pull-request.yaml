@@ -18,9 +18,8 @@ jobs:
       - run: |
           for commit in $(git rev-list ${{ github.event.before}}..${{ github.sha}}); do
               git checkout $commit
-              echo "before\n"
-              git log -1 --pretty=format:"%s"
-              echo "after\n"
+              git log -1 --pretty=format:"%s" >> test.txt
+              echo test.txt
               echo "Change-Id: " >> msg.txt
               if git interpret-trailers --parse < msg.txt | grep -q "^Change-Id: $" ; then
                 echo "passed test"
