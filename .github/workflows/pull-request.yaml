@@ -20,7 +20,7 @@ jobs:
               git checkout $commit
               if git log -1 --pretty=format:"%s" | grep -q "Change-Id: "
               then
-                echo "Substring found."
+                echo "Substring is found."
               else
                 echo "Substring not found."
               fi
