@@ -21,7 +21,7 @@ jobs:
               git log -1 --pretty=format:"%s" >> test.txt
               echo test.txt
               echo "test\n\nChange-Id: " >> msg.txt
-              if git interpret-trailers --parse < msg.txt | grep -q "^Change-Id: $" ; then
+              if git interpret-trailers --parse < msg.txt | grep -q "^Change-Id:" ; then
                 echo "passed test"
                 exit 0
               fi
