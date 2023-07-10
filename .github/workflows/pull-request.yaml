@@ -17,6 +17,9 @@ jobs:
           fetch-depth: 0
       - run: |
           for commit in $(git rev-list ${{ github.base_ref }}..${{ github.head_ref }}); do
-              git checkout $commit
-              echo "run test"
+              git log -1 --pretty=format:"%s" >> msg.txt
+              if git interpret-trailers --parse < msg.txt | grep -q "^Change-Id: $" ; then
+                exit 0
+              fi
+              echo "testing"
           done
