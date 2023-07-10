@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
       - run: |
-          for commit in $(git rev-list ${{ github.base_ref }}..${{ github.head_ref }}); do
+          for commit in $(git rev-list ${{ github.event.before}}..${{ github.sha}}); do
               git checkout $commit
               git log -1 --pretty=format:"%s" >> msg.txt
               if git interpret-trailers --parse < msg.txt | grep -q "^Change-Id: $" ; then
