@@ -1,4 +1,4 @@
-# This workflow runs after a pull-request has been approved by a reviewer.
+# This workflow runs after a pull-request has been approved by a reviewer
 
 name: CI Tests
 
