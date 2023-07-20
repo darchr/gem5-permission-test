@@ -3,12 +3,12 @@
 name: Merge Group Tests
 
 on:
-    # merge_group:
-    workflow_dispatch:
+    merge_group:
+    # workflow_dispatch:
 
-concurrency:
-  group: concurrency-group
-  cancel-in-progress: true
+# concurrency:
+#   group: concurrency-group
+#   cancel-in-progress: true
 
 jobs:
 # removing build gem5 for testing purposes
