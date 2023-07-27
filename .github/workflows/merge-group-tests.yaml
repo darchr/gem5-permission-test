@@ -80,10 +80,7 @@ jobs:
   # runs on github hosted runner
     runs-on: ubuntu-22.04
     needs: [unittests-all-opt, testlib-quick]
-    if: |
-      always() &&
-      needs.a.result == 'success' &&
-      (needs.b.result == 'success' || needs.b.result == 'skipped')
+    if: always()
     steps:
     - name: failed tests
       if: |
