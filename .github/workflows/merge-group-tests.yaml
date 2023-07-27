@@ -83,10 +83,10 @@ jobs:
     if: always()
     steps:
     - name: failed tests
-      if: always() &&
-        ((needs.unittests-all-opt.result == 'failed' || needs.unittests-all-opt.result == 'skipped') &&
-        (needs.testlib-quick.result == 'failed' || needs.testlib-quick.result == 'skipped'))
-      run: exit 1
+      if: always() && (needs.unittests-all-opt.result == 'failed' || needs.unittests-all-opt.result == 'skipped')
+      run: |
+        echo "failed"
+        exit 1
     - name: Merge Queue Checks are successful!
       if: |
         (needs.unittests-all-opt.result == 'success') &&
