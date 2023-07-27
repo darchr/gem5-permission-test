@@ -85,5 +85,10 @@ jobs:
     - name: failed tests
       run: |
         echo "failed"
-        exit 1
+    - name: failed actually
+      if: needs.unittests-all-opt.result == 'failed'
+      run: exit 1
+    - name: check
+      run: exit 0
+    
 
