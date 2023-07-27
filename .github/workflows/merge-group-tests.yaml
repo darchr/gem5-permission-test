@@ -86,7 +86,7 @@ jobs:
       run: |
         echo "failed"
     - name: failed actually
-      if: needs.unittests-all-opt.result == 'failed'
+      if: always() && needs.unittests-all-opt.result == 'failed'
       run: exit 1
     - name: check
       run: exit 0
