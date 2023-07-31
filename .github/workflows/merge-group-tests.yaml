@@ -80,14 +80,14 @@ jobs:
   # runs on github hosted runner
     runs-on: ubuntu-22.04
     needs: [unittests-all-opt, testlib-quick]
-    if: always() && (needs.unittests-all-opt.result == 'failed')
+    if: always() && (${{needs.unittests-all-opt.result == 'failed'}})
     steps:
     - name: failed tests
       run: |
         echo "failed"
-#     - name: failed actually
-#       if: always() && needs.unittests-all-opt.result == 'failed'
-#       run: exit 1
+    - name: failed actually
+      if: always() && ${{needs.unittests-all-opt.result == 'failed'}}
+      run: exit 1
     - name: check
       run: exit 0
     
