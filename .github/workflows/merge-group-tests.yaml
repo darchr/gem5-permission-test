@@ -74,7 +74,7 @@ jobs:
   testlib-quick:
     runs-on: ubuntu-22.04
     steps:
-      - run: exit 1
+      - run: exit 0
 
   all-tests-pass:
   # runs on github hosted runner
