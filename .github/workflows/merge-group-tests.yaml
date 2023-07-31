@@ -78,17 +78,16 @@ jobs:
 
   all-tests-pass:
   # runs on github hosted runner
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs: [unittests-all-opt, testlib-quick]
-    if: always() && (${{needs.unittests-all-opt.result == 'failed'}})
+    if: ${{ always() }}
     steps:
-    - name: failed tests
+    - name: failing tests, reject from queue
+      if: ${{ always() && (needs.unittests-all-opt.result == 'failure' || needs.testlib-quick.result == 'failure') }}
       run: |
-        echo "failed"
-    - name: failed actually
-      if: always() && ${{needs.unittests-all-opt.result == 'failed'}}
-      run: exit 1
-    - name: check
-      run: exit 0
+        echo "this does not pass the tests"
+        exit 1
+    # only passes if both jobs pass
+    - run: echo "actually passed"
     
 
