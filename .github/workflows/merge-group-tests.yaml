@@ -93,7 +93,7 @@ jobs:
         exit 1
     # only reaches this point and passes if both jobs pass
     - name: passing tests
-      if: ${{ needs.unittests-all-opt.result == 'success' || needs.testlib-quick.result == 'success' }}
+      if: ${{ needs.unittests-all-opt.result == 'success' && needs.testlib-quick.result == 'success' }}
       run: echo "actually passed"
     
 
