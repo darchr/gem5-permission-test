@@ -68,13 +68,13 @@ jobs:
   #     - run: echo "This job's status is ${{ job.status }}."
   unittests-all-opt:
     runs-on: ubuntu-22.04
-    if: github.repository == 'octo-org/octo-repo-prod'
+    # if: github.repository == 'octo-org/octo-repo-prod'
     steps:
       - run: exit 0
 
   testlib-quick:
     runs-on: ubuntu-22.04
-    if: github.repository == 'octo-org/octo-repo-prod'
+    # if: github.repository == 'octo-org/octo-repo-prod'
     steps:
       - run: exit 0
 
@@ -92,6 +92,8 @@ jobs:
         echo "this does not pass the tests"
         exit 1
     # only reaches this point and passes if both jobs pass
-    - run: echo "actually passed"
+    - name: passing tests
+      if: ${{ needs.unittests-all-opt.result == 'success' || needs.testlib-quick.result == 'success' }}
+      run: echo "actually passed"
     
 
